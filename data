@@ -1,0 +1,45 @@
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report
+
+df = pd.read_csv('/content/reviews_product (1).csv')
+df
+
+X = df["REVIEW"]
+y = df["Liked"]
+# Split the data into training and testing sets.
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+tfidf_vectorizer = TfidfVectorizer(max_features=5000)
+X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
+X_test_tfidf = tfidf_vectorizer.transform(X_test)
+
+# Create and train the Naive Bayes model.
+nb_classifier = MultinomialNB()
+nb_classifier.fit(X_train_tfidf, y_train)
+y_pred_nb = nb_classifier.predict(X_test_tfidf)
+accuracy_nb = accuracy_score(y_test, y_pred_nb)
+print("Naive Bayes Model Accuracy: {:.2f}%".format(accuracy_nb * 100))
+print(classification_report(y_test, y_pred_nb))
+
+svm_classifier = SVC(kernel='linear')
+svm_classifier.fit(X_train_tfidf, y_train)
+y_pred_svm = svm_classifier.predict(X_test_tfidf)
+accuracy_svm = accuracy_score(y_test, y_pred_svm)
+print("SVM Model Accuracy: {:.2f}%".format(accuracy_svm * 100))
+print(classification_report(y_test, y_pred_svm))
+
+def predict_sentiment(new_text, vectorizer, model):
+    new_text_tfidf = vectorizer.transform([new_text])
+    prediction = model.predict(new_text_tfidf)
+    return prediction[0]
+
+new_review = "This product is great! I highly recommend it."
+predicted_sentiment_nb = predict_sentiment(new_review, tfidf_vectorizer, nb_classifier)
+predicted_sentiment_svm = predict_sentiment(new_review, tfidf_vectorizer, svm_classifier)
+print("Naive Bayes Predicted Sentiment:", predicted_sentiment_nb)
+print("SVM Predicted Sentiment:", predicted_sentiment_svm)
